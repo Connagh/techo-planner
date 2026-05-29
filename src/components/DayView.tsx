@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
@@ -23,6 +24,30 @@ function hourLabel(h: number): { n: string; ap: string } {
 
 const numSx = { fontFamily: serif, fontVariantNumeric: 'lining-nums tabular-nums' }
 
+/** Tracks the current hour and re-renders at each hour boundary. */
+function useNowHour(): number {
+  const [nowHour, setNowHour] = useState(() => new Date().getHours())
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+
+    const schedule = () => {
+      const now = new Date()
+      const msUntilNextHour =
+        (60 - now.getMinutes()) * 60_000 - now.getSeconds() * 1000 - now.getMilliseconds()
+      timer = setTimeout(() => {
+        setNowHour(new Date().getHours())
+        schedule()
+      }, msUntilNextHour)
+    }
+
+    schedule()
+    return () => clearTimeout(timer)
+  }, [])
+
+  return nowHour
+}
+
 export function DayView({ cursor }: DayViewProps) {
   const planner = usePlanner()
   const k = key(cursor)
@@ -30,7 +55,7 @@ export function DayView({ cursor }: DayViewProps) {
   const counts = planner.taskCounts(k)
   const allDone = counts.total > 0 && counts.done === counts.total
   const td = isToday(cursor)
-  const nowHour = new Date().getHours()
+  const nowHour = useNowHour()
 
   return (
     <Box
