@@ -27,7 +27,7 @@ export function MonthView({ cursor, onSelectDay }: MonthViewProps) {
   const monthKey = `${cursor.getFullYear()}-${String(month + 1).padStart(2, '0')}`
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, height: '100%', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, height: { xs: 'auto', lg: '100%' }, gap: 3 }}>
       {/* Calendar */}
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>

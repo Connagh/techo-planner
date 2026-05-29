@@ -36,7 +36,7 @@ export function DayView({ cursor }: DayViewProps) {
     <Box
       sx={{
         mx: 'auto',
-        height: '100%',
+        height: { xs: 'auto', lg: '100%' },
         maxWidth: 1024,
         display: 'flex',
         flexDirection: 'column',
@@ -90,15 +90,15 @@ export function DayView({ cursor }: DayViewProps) {
 
       <Box
         sx={{
-          flex: 1,
-          minHeight: 0,
+          flex: { xs: '0 1 auto', lg: 1 },
+          minHeight: { lg: 0 },
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', lg: '1fr 1.1fr' },
           gap: 4,
         }}
       >
         {/* Left: focus + notes */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minHeight: 0 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minHeight: { lg: 0 } }}>
           <Box component="section">
             <SectionLabel
               hint="Your tasks for the day. Click the box to mark one done. It fills in and gets crossed out. Click the text to edit, or use × to remove."
@@ -141,7 +141,15 @@ export function DayView({ cursor }: DayViewProps) {
             <TaskList dateKey={k} placeholder="What needs doing today?" />
           </Box>
 
-          <Box component="section" sx={{ flex: 1, minHeight: 160, display: 'flex', flexDirection: 'column' }}>
+          <Box
+            component="section"
+            sx={{
+              flex: { lg: 1 },
+              minHeight: { lg: 160 },
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <SectionLabel hint="A free space for journaling, reflections, or a single 'line a day' to remember how it went.">
               Notes
             </SectionLabel>
@@ -150,7 +158,8 @@ export function DayView({ cursor }: DayViewProps) {
               onChange={(e) => planner.setNote(k, e.target.value)}
               placeholder="A line a day. What happened, how it felt…"
               sx={{
-                flex: 1,
+                flex: { lg: 1 },
+                minHeight: { xs: 120, lg: 160 },
                 borderRadius: 3,
                 border: `1px solid ${tokens.line}`,
                 bgcolor: 'background.paper',
@@ -164,15 +173,15 @@ export function DayView({ cursor }: DayViewProps) {
         </Box>
 
         {/* Right: hourly timeline */}
-        <Box component="section" sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <Box component="section" sx={{ display: 'flex', flexDirection: 'column', minHeight: { lg: 0 } }}>
           <SectionLabel hint="An hourly timeline from 6am to 10pm. Add a note for each hour. On today, the current hour is marked in red.">
             Schedule
           </SectionLabel>
           <Box
             sx={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
+              flex: { lg: 1 },
+              minHeight: { lg: 0 },
+              overflowY: { xs: 'visible', lg: 'auto' },
               borderRadius: 3,
               border: `1px solid ${tokens.line}`,
               bgcolor: 'background.paper',

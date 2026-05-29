@@ -209,9 +209,16 @@ function App() {
 
         <Box
           component="main"
-          sx={{ flex: 1, minHeight: 0, px: { xs: 2.5, sm: 4 }, pb: 3 }}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: { xs: 'auto', lg: 'hidden' },
+            WebkitOverflowScrolling: 'touch',
+            px: { xs: 2.5, sm: 4 },
+            pb: 3,
+          }}
         >
-          <Box sx={{ height: '100%' }}>
+          <Box sx={{ height: { xs: 'auto', lg: '100%' } }}>
             {view === 'day' && <DayView cursor={cursor} />}
             {view === 'week' && <WeekView cursor={cursor} onSelectDay={selectDay} />}
             {view === 'month' && <MonthView cursor={cursor} onSelectDay={selectDay} />}
