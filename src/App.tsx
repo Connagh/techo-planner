@@ -13,10 +13,12 @@ import {
   addMonths,
   formatRange,
   isToday,
+  key,
   today,
   weekDates,
 } from './lib/dates'
 import { PlannerProvider } from './lib/store'
+import { pageMotion, type PageKind } from './lib/motion'
 import { MonthView } from './components/MonthView'
 import { WeekView } from './components/WeekView'
 import { DayView } from './components/DayView'
@@ -34,8 +36,13 @@ const VIEWS: { id: View; label: string }[] = [
 function App() {
   const [view, setView] = useState<View>('day')
   const [cursor, setCursor] = useState<Date>(today())
+  // How the next page should arrive, and a counter so identical navigations
+  // (e.g. tapping the same day) still retrigger the entrance.
+  const [motion, setMotion] = useState<{ kind: PageKind; n: number }>({ kind: 'zoom', n: 0 })
+  const turn = (kind: PageKind) => setMotion((m) => ({ kind, n: m.n + 1 }))
 
   const shift = (dir: number) => {
+    turn(dir > 0 ? 'forward' : 'backward')
     setCursor((c) =>
       view === 'day'
         ? addDays(c, dir)
@@ -45,9 +52,18 @@ function App() {
     )
   }
 
-  const goToday = () => setCursor(today())
+  const goToday = () => {
+    turn(today().getTime() < cursor.getTime() ? 'backward' : 'forward')
+    setCursor(today())
+  }
+
+  const changeView = (v: View) => {
+    turn('zoom')
+    setView(v)
+  }
 
   const selectDay = (d: Date) => {
+    turn('zoom')
     setCursor(d)
     setView('day')
   }
@@ -61,9 +77,9 @@ function App() {
       if (e.key === 'ArrowLeft') shift(-1)
       else if (e.key === 'ArrowRight') shift(1)
       else if (e.key === 't' || e.key === 'T') goToday()
-      else if (e.key === 'd' || e.key === 'D') setView('day')
-      else if (e.key === 'w' || e.key === 'W') setView('week')
-      else if (e.key === 'm' || e.key === 'M') setView('month')
+      else if (e.key === 'd' || e.key === 'D') changeView('day')
+      else if (e.key === 'w' || e.key === 'W') changeView('week')
+      else if (e.key === 'm' || e.key === 'M') changeView('month')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -172,7 +188,7 @@ function App() {
             <ToggleButtonGroup
               exclusive
               value={view}
-              onChange={(_, v: View | null) => v && setView(v)}
+              onChange={(_, v: View | null) => v && changeView(v)}
               sx={{
                 border: `1px solid ${tokens.line}`,
                 borderRadius: 99,
@@ -213,15 +229,19 @@ function App() {
             flex: 1,
             minHeight: 0,
             overflowY: { xs: 'auto', lg: 'hidden' },
+            overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch',
             px: { xs: 2.5, sm: 4 },
             pb: 3,
           }}
         >
-          <Box sx={{ height: { xs: 'auto', lg: '100%' } }}>
+          <Box
+            key={`${view}-${key(cursor)}-${motion.n}`}
+            sx={{ height: { xs: 'auto', lg: '100%' }, willChange: 'transform, opacity', ...pageMotion(motion.kind) }}
+          >
             {view === 'day' && <DayView cursor={cursor} />}
-            {view === 'week' && <WeekView cursor={cursor} onSelectDay={selectDay} />}
-            {view === 'month' && <MonthView cursor={cursor} onSelectDay={selectDay} />}
+            {view === 'week' && <WeekView cursor={cursor} entrance={motion.kind} onSelectDay={selectDay} />}
+            {view === 'month' && <MonthView cursor={cursor} entrance={motion.kind} onSelectDay={selectDay} />}
           </Box>
         </Box>
       </Box>

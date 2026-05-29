@@ -3,8 +3,9 @@ import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import InputBase from '@mui/material/InputBase'
-import { formatLong, isToday, key, weekNumber } from '../lib/dates'
+import { MONTHS, formatLong, isToday, key, startOfWeek, weekNumber } from '../lib/dates'
 import { usePlanner } from '../lib/store'
+import { quoteForKey } from '../lib/quotes'
 import { TaskList } from './TaskList'
 import { SectionLabel } from './SectionLabel'
 import { Textarea } from './Textarea'
@@ -56,6 +57,24 @@ export function DayView({ cursor }: DayViewProps) {
   const allDone = counts.total > 0 && counts.done === counts.total
   const td = isToday(cursor)
   const nowHour = useNowHour()
+
+  // Quiet, read-only echoes of the week's focus and month's intention —
+  // the digital equivalent of a techo's ribbon bookmarks. Edited only from
+  // the week/month views; here they simply give the day its context.
+  const weekKey = key(startOfWeek(cursor))
+  const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`
+  const weekFocus = planner.weekNote(weekKey).trim()
+  const monthIntention = planner.monthNote(monthKey).trim()
+  const ribbons = [
+    weekFocus && { label: 'This week', text: weekFocus, accent: tokens.indigo },
+    monthIntention && {
+      label: MONTHS[cursor.getMonth()],
+      text: monthIntention,
+      accent: tokens.vermilion,
+    },
+  ].filter(Boolean) as { label: string; text: string; accent: string }[]
+
+  const quote = quoteForKey(k)
 
   return (
     <Box
@@ -112,6 +131,60 @@ export function DayView({ cursor }: DayViewProps) {
           {formatLong(cursor)}
         </Typography>
       </Box>
+
+      {ribbons.length > 0 && (
+        <Box
+          sx={{
+            mb: 2.5,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: { xs: 1.5, sm: 4 },
+          }}
+        >
+          {ribbons.map((r) => (
+            <Box
+              key={r.label}
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 1,
+                minWidth: 0,
+                pl: 1.25,
+                borderLeft: `2px solid ${r.accent}`,
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  flexShrink: 0,
+                  fontSize: 10,
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'text.disabled',
+                }}
+              >
+                {r.label}
+              </Box>
+              <Box
+                component="span"
+                title={r.text}
+                sx={{
+                  minWidth: 0,
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {r.text}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      )}
 
       <Box
         sx={{
@@ -256,6 +329,7 @@ export function DayView({ cursor }: DayViewProps) {
                         boxShadow: active
                           ? `inset 2px 0 0 ${tokens.vermilion}`
                           : `inset 1px 0 0 ${tokens.line}`,
+                        transition: 'box-shadow 220ms ease',
                         '& input': { px: 1.5, py: 1.25 },
                         '&.Mui-focused': { bgcolor: 'background.default' },
                       }}
@@ -265,6 +339,47 @@ export function DayView({ cursor }: DayViewProps) {
               )
             })}
           </Box>
+        </Box>
+      </Box>
+
+      <Box
+        component="footer"
+        sx={{
+          mt: 3,
+          pt: 2,
+          borderTop: `1px solid ${tokens.line}`,
+          textAlign: 'center',
+        }}
+      >
+        <Box sx={{ maxWidth: 620, mx: 'auto' }}>
+          <Typography
+            sx={{
+              fontFamily: serif,
+              fontStyle: 'italic',
+              fontSize: 15,
+              lineHeight: 1.5,
+              color: 'text.secondary',
+            }}
+          >
+            {`\u201C${quote.text}\u201D`}
+          </Typography>
+          {quote.author && (
+            <Typography
+              sx={{
+                mt: 0.75,
+                fontSize: 11,
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'text.disabled',
+              }}
+            >
+              <Box component="span" sx={{ color: 'primary.main', mr: 0.75 }}>
+                —
+              </Box>
+              {quote.author}
+            </Typography>
+          )}
         </Box>
       </Box>
     </Box>

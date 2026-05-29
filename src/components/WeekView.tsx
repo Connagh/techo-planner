@@ -9,6 +9,7 @@ import {
   weekDates,
 } from '../lib/dates'
 import { usePlanner } from '../lib/store'
+import { stagger, type PageKind } from '../lib/motion'
 import { TaskList } from './TaskList'
 import { Hint } from './Hint'
 import { Textarea } from './Textarea'
@@ -16,6 +17,7 @@ import { tokens, serif } from '../theme'
 
 interface WeekViewProps {
   cursor: Date
+  entrance?: PageKind
   onSelectDay: (d: Date) => void
 }
 
@@ -26,10 +28,13 @@ const labelSx = {
   letterSpacing: '0.14em',
 }
 
-export function WeekView({ cursor, onSelectDay }: WeekViewProps) {
+export function WeekView({ cursor, entrance = 'zoom', onSelectDay }: WeekViewProps) {
   const planner = usePlanner()
   const days = weekDates(cursor)
   const weekKey = key(startOfWeek(cursor))
+  const cascade = entrance === 'zoom'
+  const reveal = (i: number) =>
+    cascade ? stagger(i, { base: 60, step: 58 }) : null
 
   return (
     <Box
@@ -40,7 +45,7 @@ export function WeekView({ cursor, onSelectDay }: WeekViewProps) {
         gap: 1.5,
       }}
     >
-      {days.map((d) => {
+      {days.map((d, i) => {
         const k = key(d)
         const td = isToday(d)
         const sunday = d.getDay() === 0
@@ -56,6 +61,12 @@ export function WeekView({ cursor, onSelectDay }: WeekViewProps) {
               border: `1px solid ${td ? 'rgba(192,73,47,0.4)' : tokens.line}`,
               bgcolor: 'background.paper',
               p: 1.75,
+              transition: 'border-color 200ms ease, box-shadow 200ms ease',
+              '&:hover': {
+                borderColor: td ? 'rgba(192,73,47,0.55)' : tokens.lineStrong,
+                boxShadow: '0 4px 18px -12px rgba(32,32,29,0.25)',
+              },
+              ...reveal(i),
             }}
           >
             <ButtonBase
@@ -113,6 +124,7 @@ export function WeekView({ cursor, onSelectDay }: WeekViewProps) {
           border: `1px dashed ${tokens.lineStrong}`,
           bgcolor: 'background.default',
           p: 1.75,
+          ...reveal(7),
         }}
       >
         <Box

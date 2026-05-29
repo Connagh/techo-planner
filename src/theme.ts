@@ -49,8 +49,36 @@ export const theme = createTheme({
     h1: { fontWeight: 600 },
   },
   components: {
-    // Minimalism over Material: no ripples.
-    MuiButtonBase: { defaultProps: { disableRipple: true } },
+    // Minimalism over Material: no ripples, but gentle state fades.
+    MuiButtonBase: {
+      defaultProps: { disableRipple: true },
+      styleOverrides: {
+        root: {
+          transition:
+            'background-color 160ms ease, color 160ms ease, border-color 160ms ease, opacity 160ms ease',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          transition:
+            'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          transition: 'background-color 200ms ease, color 200ms ease',
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: { transition: 'background-color 160ms ease, color 160ms ease' },
+      },
+    },
     MuiPaper: {
       defaultProps: { elevation: 0 },
       styleOverrides: { root: { backgroundImage: 'none' } },
@@ -78,6 +106,32 @@ export const theme = createTheme({
         body: {
           WebkitFontSmoothing: 'antialiased',
           textRendering: 'optimizeLegibility',
+        },
+        // Shared entrance keyframes (used via lib/motion helpers).
+        // A soft rise + fade — a section settling onto the page.
+        '@keyframes techo-rise': {
+          from: { opacity: 0, transform: 'translate3d(0, 14px, 0)' },
+          to: { opacity: 1, transform: 'none' },
+        },
+        // Ink soaking in — opacity only.
+        '@keyframes techo-fade': {
+          from: { opacity: 0 },
+          to: { opacity: 1 },
+        },
+        // Turning to a later page: drifts in from the right.
+        '@keyframes techo-page-next': {
+          '0%': { opacity: 0, transform: 'translate3d(34px, 0, 0)' },
+          '100%': { opacity: 1, transform: 'none' },
+        },
+        // Turning back: drifts in from the left.
+        '@keyframes techo-page-prev': {
+          '0%': { opacity: 0, transform: 'translate3d(-34px, 0, 0)' },
+          '100%': { opacity: 1, transform: 'none' },
+        },
+        // Changing scale (day/week/month): rises and settles into focus.
+        '@keyframes techo-zoom': {
+          '0%': { opacity: 0, transform: 'translate3d(0, 16px, 0) scale(0.982)' },
+          '100%': { opacity: 1, transform: 'none' },
         },
         '::selection': { background: tokens.vermilionSoft },
         '*::-webkit-scrollbar': { width: 10, height: 10 },

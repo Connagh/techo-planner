@@ -3,12 +3,14 @@ import ButtonBase from '@mui/material/ButtonBase'
 import Typography from '@mui/material/Typography'
 import { MONTHS, WEEKDAYS, isToday, key, monthGrid } from '../lib/dates'
 import { usePlanner } from '../lib/store'
+import { stagger, type PageKind } from '../lib/motion'
 import { Hint } from './Hint'
 import { Textarea } from './Textarea'
 import { tokens, serif } from '../theme'
 
 interface MonthViewProps {
   cursor: Date
+  entrance?: PageKind
   onSelectDay: (d: Date) => void
 }
 
@@ -20,16 +22,17 @@ const labelSx = {
   letterSpacing: '0.14em',
 }
 
-export function MonthView({ cursor, onSelectDay }: MonthViewProps) {
+export function MonthView({ cursor, entrance = 'zoom', onSelectDay }: MonthViewProps) {
   const planner = usePlanner()
   const grid = monthGrid(cursor)
   const month = cursor.getMonth()
   const monthKey = `${cursor.getFullYear()}-${String(month + 1).padStart(2, '0')}`
+  const cascade = entrance === 'zoom'
 
   return (
     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, height: { xs: 'auto', lg: '100%' }, gap: 3 }}>
       {/* Calendar */}
-      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', ...(cascade ? stagger(0) : null) }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
           {WEEKDAYS.map((w, i) => (
             <Box
@@ -144,7 +147,7 @@ export function MonthView({ cursor, onSelectDay }: MonthViewProps) {
       </Box>
 
       {/* Monthly intentions */}
-      <Box component="aside" sx={{ width: { xs: '100%', lg: 256 }, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box component="aside" sx={{ width: { xs: '100%', lg: 256 }, flexShrink: 0, display: 'flex', flexDirection: 'column', ...(cascade ? stagger(1, { base: 120, step: 90 }) : null) }}>
         <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <Typography component="h2" sx={{ ...labelSx, color: 'text.disabled' }}>
