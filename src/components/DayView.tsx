@@ -210,22 +210,18 @@ export function DayView({ cursor }: DayViewProps) {
                       {ap}
                     </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', flex: 1, alignItems: 'stretch' }}>
-                    <Box
-                      sx={{
-                        width: active ? 2 : 1,
-                        flexShrink: 0,
-                        bgcolor: active ? 'primary.main' : tokens.line,
-                      }}
-                    />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <InputBase
                       value={day.schedule[h] ?? ''}
                       onChange={(e) => planner.setSchedule(k, h, e.target.value)}
                       sx={{
-                        flex: 1,
+                        width: '100%',
                         fontSize: 14,
                         lineHeight: 1.4,
                         color: 'text.primary',
+                        boxShadow: active
+                          ? `inset 2px 0 0 ${tokens.vermilion}`
+                          : `inset 1px 0 0 ${tokens.line}`,
                         '& input': { px: 1.5, py: 1.25 },
                         '&.Mui-focused': { bgcolor: 'background.default' },
                       }}
