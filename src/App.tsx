@@ -18,6 +18,7 @@ import {
   weekDates,
 } from './lib/dates'
 import { PlannerProvider } from './lib/store'
+import { SyncProvider } from './lib/sync'
 import { pageMotion, type PageKind } from './lib/motion'
 import { MonthView } from './components/MonthView'
 import { WeekView } from './components/WeekView'
@@ -104,6 +105,7 @@ function App() {
 
   return (
     <PlannerProvider>
+      <SyncProvider>
       <Box
         sx={{
           display: 'flex',
@@ -245,6 +247,7 @@ function App() {
           </Box>
         </Box>
       </Box>
+      </SyncProvider>
     </PlannerProvider>
   )
 }

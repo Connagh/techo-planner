@@ -28,11 +28,20 @@ export interface PlannerData {
   monthNotes: Record<string, string>
   /** Week-start key (YYYY-MM-DD) -> weekly focus. */
   weekNotes: Record<string, string>
+  /**
+   * Epoch ms of the last local edit. Used by sync to decide which copy
+   * (this device or the cloud) is newer. 0 means "never edited here".
+   */
+  updatedAt: number
 }
 
 const STORAGE_KEY = 'techo.planner.v1'
 
 const EMPTY_DAY: DayEntry = { tasks: [], schedule: {}, note: '' }
+
+function empty(): PlannerData {
+  return { days: {}, monthNotes: {}, weekNotes: {}, updatedAt: 0 }
+}
 
 function load(): PlannerData {
   try {
@@ -44,7 +53,7 @@ function load(): PlannerData {
   } catch {
     // ignore corrupt storage
   }
-  return { days: {}, monthNotes: {}, weekNotes: {} }
+  return empty()
 }
 
 function uid(): string {
@@ -65,17 +74,28 @@ interface PlannerApi {
   setMonthNote: (mk: string, note: string) => void
   weekNote: (wk: string) => string
   setWeekNote: (wk: string, note: string) => void
+  /** Live planner snapshot. Read for backups and sync. */
+  data: PlannerData
   /** Full planner snapshot, for backups. */
   exportData: () => PlannerData
-  /** Replace the entire planner from a backup. Returns false if invalid. */
+  /** Replace the entire planner from a backup. Counts as a local edit. Returns false if invalid. */
   importData: (raw: unknown) => boolean
+  /**
+   * Replace the entire planner verbatim, preserving the snapshot's own
+   * updatedAt. Used by sync when pulling a newer copy from the cloud so the
+   * pull is NOT treated as a fresh local edit (which would loop). Returns
+   * the sanitized data that was applied, or null if invalid.
+   */
+  replaceAll: (raw: unknown) => PlannerData | null
+  /** Erase the local planner and any local safety backups. */
+  clearAll: () => void
 }
 
 /** Narrow an unknown value (e.g. parsed JSON) into a safe PlannerData. */
 function sanitize(raw: unknown): PlannerData | null {
   if (!raw || typeof raw !== 'object') return null
   const obj = raw as Record<string, unknown>
-  const out: PlannerData = { days: {}, monthNotes: {}, weekNotes: {} }
+  const out: PlannerData = empty()
 
   const days = obj.days
   if (days && typeof days === 'object') {
@@ -115,6 +135,11 @@ function sanitize(raw: unknown): PlannerData | null {
   copyStrings(obj.monthNotes, out.monthNotes)
   copyStrings(obj.weekNotes, out.weekNotes)
 
+  out.updatedAt =
+    typeof obj.updatedAt === 'number' && Number.isFinite(obj.updatedAt)
+      ? obj.updatedAt
+      : 0
+
   return out
 }
 
@@ -122,6 +147,11 @@ const PlannerContext = createContext<PlannerApi | null>(null)
 
 export function PlannerProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<PlannerData>(load)
+
+  // A local edit: apply the change and stamp the moment it happened.
+  const commit = useCallback((fn: (prev: PlannerData) => PlannerData) => {
+    setData((prev) => ({ ...fn(prev), updatedAt: Date.now() }))
+  }, [])
 
   // Debounced persistence keeps typing smooth.
   const timer = useRef<number | undefined>(undefined)
@@ -139,12 +169,12 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
   const mutateDay = useCallback(
     (k: string, fn: (d: DayEntry) => DayEntry) => {
-      setData((prev) => {
+      commit((prev) => {
         const current = prev.days[k] ?? EMPTY_DAY
         return { ...prev, days: { ...prev.days, [k]: fn(current) } }
       })
     },
-    [],
+    [commit],
   )
 
   const api = useMemo<PlannerApi>(
@@ -197,25 +227,46 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         })),
       monthNote: (mk) => data.monthNotes[mk] ?? '',
       setMonthNote: (mk, note) =>
-        setData((prev) => ({
+        commit((prev) => ({
           ...prev,
           monthNotes: { ...prev.monthNotes, [mk]: note },
         })),
       weekNote: (wk) => data.weekNotes[wk] ?? '',
       setWeekNote: (wk, note) =>
-        setData((prev) => ({
+        commit((prev) => ({
           ...prev,
           weekNotes: { ...prev.weekNotes, [wk]: note },
         })),
+      data,
       exportData: () => data,
       importData: (raw) => {
         const clean = sanitize(raw)
         if (!clean) return false
+        // A manual restore is a deliberate local edit, so it should win.
+        clean.updatedAt = Date.now()
         setData(clean)
         return true
       },
+      replaceAll: (raw) => {
+        const clean = sanitize(raw)
+        if (!clean) return null
+        setData(clean)
+        return clean
+      },
+      clearAll: () => {
+        setData(empty())
+        try {
+          localStorage.removeItem(STORAGE_KEY)
+          // Also drop the timestamped sync safety backups (techo.planner.backup.*).
+          for (const k of Object.keys(localStorage)) {
+            if (k.startsWith('techo.planner.backup.')) localStorage.removeItem(k)
+          }
+        } catch {
+          // ignore
+        }
+      },
     }),
-    [data, mutateDay],
+    [data, mutateDay, commit],
   )
 
   return (
